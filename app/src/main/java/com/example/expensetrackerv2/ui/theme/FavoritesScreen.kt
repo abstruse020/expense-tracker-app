@@ -1,9 +1,6 @@
 package com.example.expensetrackerv2.ui.theme
 
-import android.util.Log
-import androidx.compose.foundation.clickable
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,19 +15,15 @@ import com.example.expensetrackerv2.data.deleteExpenses
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Surface
 import androidx.compose.material3.HorizontalDivider
@@ -52,7 +45,7 @@ fun FavoritesScreen(modifier: Modifier = Modifier) {
                 .thenByDescending{it.dateAdded}
             )
     }
-    val snackbarHostState = remember { SnackbarHostState() }
+    // val snackbarHostState = remember { SnackbarHostState() }
     LazyColumn(modifier = modifier.padding(16.dp)) {
         items(expenses) { expense ->
             ExpenseItem(
@@ -64,15 +57,6 @@ fun FavoritesScreen(modifier: Modifier = Modifier) {
         }
     }
 }
-
-//@Composable
-//fun LazyCol(modifier: Modifier, expenses: List<Expense>){
-//    LazyColumn(modifier = modifier.padding(16.dp)) {
-//        items(expenses) { expense ->
-//            ExpenseItem(expense)
-//        }
-//    }
-//}
 
 @Composable
 fun ExpenseItem(expense: Expense,

@@ -10,7 +10,7 @@ import androidx.compose.foundation.lazy.items
 
 import com.example.expensetrackerv2.model.Expense
 import com.example.expensetrackerv2.data.readExpenses
-import com.example.expensetrackerv2.data.deleteExpenses
+import com.example.expensetrackerv2.data.deleteExpense
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
@@ -74,7 +74,7 @@ fun ExpenseItem(expense: Expense,
                 TextButton(
                     onClick = {
                         showDialog = false
-                        deleteExpenses(context, expense.dateAdded)   // dummy function call
+                        deleteExpense(context, expense.dateAdded)   // dummy function call
                         onDelete(expense)        // update UI list
                     }
                 ) {

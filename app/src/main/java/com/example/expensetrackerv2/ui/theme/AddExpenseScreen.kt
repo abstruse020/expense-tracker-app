@@ -1,5 +1,10 @@
 package com.example.expensetrackerv2.ui.theme
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 
 
@@ -28,8 +33,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.List as ListIcon
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -42,6 +50,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -61,13 +70,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.expensetrackerv2.data.CategoryData
+import com.example.expensetrackerv2.data.CsvUriStore
 import com.example.expensetrackerv2.data.saveExpense
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
 
 @Composable
 fun AddExpenseScreen(modifier: Modifier = Modifier) {
@@ -86,6 +95,18 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
         if (subCategory !in subCategories){
             subCategory = subCategories.firstOrNull() ?: ""
         }
+    }
+
+    val context = LocalContext.current
+    // Handle file picker
+    var hasCsvUri by remember { mutableStateOf(CsvUriStore.get(context) != null) }
+
+    val createLauncher = rememberCsvCreateLauncher { uri ->
+        hasCsvUri = true // update UI state once picked
+    }
+
+    val openLauncher = rememberCsvOpenLauncher { uri ->
+        hasCsvUri = true
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -154,7 +175,7 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
                 onDateChange = { date = it }
             )
 
-            val context = LocalContext.current
+//            val context = LocalContext.current
 
             Button(
                 onClick = {
@@ -173,7 +194,7 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
                             else "Failed to save ❌"
                         )
                     }
-                    if (success){
+                    if (success) {
                         amount = ""
                         description = ""
                     }
@@ -189,6 +210,49 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
                 Text("Save Expense", style = MaterialTheme.typography.titleSmall)
             }
 
+            if (true) {
+                Text(
+                    text = "Set up your expenses file",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+//                Spacer(modifier = Modifier.height(1.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { createLauncher.launch("expenses.csv") },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("New File")
+                    }
+                    OutlinedButton(
+                        onClick = { openLauncher.launch(arrayOf("*/*")) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.ListIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+//                        Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Existing")
+                    }
+                }
+            }
         }
     }
 }
@@ -453,4 +517,42 @@ fun DateInputField(
             }
         }
     )
+}
+
+@Composable
+fun rememberCsvCreateLauncher(
+    onCreated: (Uri) -> Unit
+): ManagedActivityResultLauncher<String, Uri?> {1
+    val context = LocalContext.current
+    return rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+            CsvUriStore.save(context, uri)
+            onCreated(uri)
+        }
+    }
+}
+
+@Composable
+fun rememberCsvOpenLauncher(
+    onOpened: (Uri) -> Unit
+): ManagedActivityResultLauncher<Array<String>, Uri?> {
+    val context = LocalContext.current
+    return rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+            CsvUriStore.save(context, uri)
+            onOpened(uri)
+        }
+    }
 }

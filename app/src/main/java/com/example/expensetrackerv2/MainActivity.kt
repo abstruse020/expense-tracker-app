@@ -21,13 +21,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.expensetrackerv2.ui.theme.ExpenseTrackerV2Theme
-import com.example.expensetrackerv2.ui.theme.FavoritesScreen
+import com.example.expensetrackerv2.ui.expenses.ExpensesListScreen
 
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Info
-import com.example.expensetrackerv2.ui.theme.AddExpenseScreen
-import com.example.expensetrackerv2.ui.theme.OverviewScreen
+import com.example.expensetrackerv2.ui.addexpense.AddExpenseScreen
+import com.example.expensetrackerv2.ui.overview.OverviewScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
 @PreviewScreenSizes
 @Composable
 fun ExpenseTrackerV2App() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.ADD) }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -66,9 +66,9 @@ fun ExpenseTrackerV2App() {
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             when (currentDestination) {
-                AppDestinations.HOME -> AddExpenseScreen(Modifier.padding(innerPadding))
-                AppDestinations.LIST -> FavoritesScreen(Modifier.padding(innerPadding))
-                AppDestinations.PROFILE -> OverviewScreen( Modifier.padding(innerPadding))
+                AppDestinations.ADD -> AddExpenseScreen(Modifier.padding(innerPadding))
+                AppDestinations.EXPENSES -> ExpensesListScreen(Modifier.padding(innerPadding))
+                AppDestinations.OVERVIEW -> OverviewScreen( Modifier.padding(innerPadding))
             }
         }
     }
@@ -78,9 +78,9 @@ enum class AppDestinations(
     val label: String,
     val icon: ImageVector,
 ) {
-    HOME("Add", Icons.Default.AddCircle),
-    LIST("List", Icons.Default.Menu),
-    PROFILE("Overview", Icons.Default.Info),
+    ADD("Add", Icons.Default.AddCircle),
+    EXPENSES("List", Icons.Default.Menu),
+    OVERVIEW("Overview", Icons.Default.Info),
 }
 
 @Composable

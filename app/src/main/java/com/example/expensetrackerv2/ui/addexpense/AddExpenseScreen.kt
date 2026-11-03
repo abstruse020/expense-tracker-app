@@ -1,5 +1,8 @@
-package com.example.expensetrackerv2.ui.theme
+package com.example.expensetrackerv2.ui.addexpense
 
+import com.example.expensetrackerv2.ui.components.AppCardContent
+import com.example.expensetrackerv2.ui.components.AppHeader
+import com.example.expensetrackerv2.ui.theme.*
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.ManagedActivityResultLauncher

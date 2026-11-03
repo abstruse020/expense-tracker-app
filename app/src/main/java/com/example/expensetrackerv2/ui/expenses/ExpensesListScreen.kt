@@ -1,5 +1,8 @@
-package com.example.expensetrackerv2.ui.theme
+package com.example.expensetrackerv2.ui.expenses
 
+import com.example.expensetrackerv2.ui.components.AppCardContent
+import com.example.expensetrackerv2.ui.components.AppHeader
+import com.example.expensetrackerv2.ui.theme.*
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -34,7 +37,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun FavoritesScreen(modifier: Modifier = Modifier) {
+fun ExpensesListScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var expenses by remember { mutableStateOf(emptyList<Expense>()) }
 

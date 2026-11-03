@@ -34,11 +34,12 @@ fun AppHeader(
     subtitle: String = "",
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val expensePurple = MaterialTheme.colorScheme.primary
     val gradientTop = MaterialTheme.colorScheme.secondary
     val gradientBottom = MaterialTheme.colorScheme.primary
     val bgPrimary = MaterialTheme.colorScheme.background
-    val titleColor = MaterialTheme.colorScheme.onPrimary
+    // The title is laid out below the gradient box (top padding = header height),
+    // so it sits on the page background, not on the gradient.
+    val titleColor = MaterialTheme.colorScheme.onBackground
 //    Color(0xFF5C4FC3),
 //    Color(0xFF7B6FD4)
 //    val bgPrimary = Color(0xFFF5F5F5)
@@ -46,11 +47,7 @@ fun AppHeader(
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = bgPrimary
-                )
+                Snackbar(snackbarData = data)
             }
         }
     ) { padding ->
@@ -118,7 +115,7 @@ fun AppHeader(
                     if (subtitle.isNotBlank()) {
                         Text(
                             subtitle,
-                            color = titleColor.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }

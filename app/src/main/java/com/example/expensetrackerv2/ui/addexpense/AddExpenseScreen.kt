@@ -101,25 +101,13 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
     }
 
     val context = LocalContext.current
-    // Handle file picker
-    var hasCsvUri by remember { mutableStateOf(CsvUriStore.get(context) != null) }
-
-    val createLauncher = rememberCsvCreateLauncher { uri ->
-        hasCsvUri = true // update UI state once picked
-    }
-
-    val openLauncher = rememberCsvOpenLauncher { uri ->
-        hasCsvUri = true
-    }
-
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val expensePurple = MaterialTheme.colorScheme.onPrimary
     val purpleTextFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = expensePurple,
-        unfocusedBorderColor = expensePurple.copy(alpha = 0.5f),
-        focusedLabelColor = expensePurple,
-        cursorColor = expensePurple
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        focusedLabelColor = MaterialTheme.colorScheme.primary,
+        cursorColor = MaterialTheme.colorScheme.primary
     )
     AppHeader(
             snackbarHostState = snackbarHostState,
@@ -182,7 +170,8 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
 
             Button(
                 onClick = {
-                    val success = saveExpense(
+                    val hasFile = CsvUriStore.get(context) != null
+                    val success = hasFile && saveExpense(
                         context,
                         category,
                         subCategory,
@@ -193,8 +182,11 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
                     )
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            if (success) "Saved successfully ✅"
-                            else "Failed to save ❌"
+                            when {
+                                success -> "Saved successfully ✅"
+                                !hasFile -> "No expenses file set up. Go to Settings to set one up ⚙️"
+                                else -> "Failed to save ❌"
+                            }
                         )
                     }
                     if (success) {
@@ -211,50 +203,6 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
 //                )
             ) {
                 Text("Save Expense", style = MaterialTheme.typography.titleSmall)
-            }
-
-            if (true) {
-                Text(
-                    text = "Set up your expenses file",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-//                Spacer(modifier = Modifier.height(1.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { createLauncher.launch("expenses.csv") },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("New File")
-                    }
-                    OutlinedButton(
-                        onClick = { openLauncher.launch(arrayOf("*/*")) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.ListIcon,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-//                        Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Existing")
-                    }
-                }
             }
         }
     }
@@ -410,7 +358,7 @@ fun DropdownField(
                             option,
                             fontWeight = if (option == selected) FontWeight.Bold else FontWeight.Normal,
                             color = if (option == selected)
-                                MaterialTheme.colorScheme.onPrimary
+                                MaterialTheme.colorScheme.onSecondaryContainer
                             else
                                 MaterialTheme.colorScheme.onSurface
                         )
@@ -421,7 +369,7 @@ fun DropdownField(
                     },
                     // Highlight selected item background
                     modifier = if (option == selected)
-                        Modifier.background(MaterialTheme.colorScheme.surface)
+                        Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
                     else
                         Modifier
                 )
@@ -459,8 +407,8 @@ fun DateInputField(
         selectedDayContainerColor = MaterialTheme.colorScheme.primary,
         selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
 
-        todayDateBorderColor = MaterialTheme.colorScheme.onPrimary,
-        todayContentColor = MaterialTheme.colorScheme.onPrimary,
+        todayDateBorderColor = MaterialTheme.colorScheme.primary,
+        todayContentColor = MaterialTheme.colorScheme.primary,
 
         navigationContentColor = MaterialTheme.colorScheme.secondary
     )
@@ -485,7 +433,7 @@ fun DateInputField(
 //                        contentColor = MaterialTheme.colorScheme.secondary
 //                    )
                 ) {
-                    Text("OK", color = MaterialTheme.colorScheme.secondary)
+                    Text("OK")
                 }
             }
         ) {
@@ -515,47 +463,9 @@ fun DateInputField(
                 Icon(
                     imageVector = Icons.Default.DateRange,
                     contentDescription = "Pick date",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     )
-}
-
-@Composable
-fun rememberCsvCreateLauncher(
-    onCreated: (Uri) -> Unit
-): ManagedActivityResultLauncher<String, Uri?> {1
-    val context = LocalContext.current
-    return rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        if (uri != null) {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            CsvUriStore.save(context, uri)
-            onCreated(uri)
-        }
-    }
-}
-
-@Composable
-fun rememberCsvOpenLauncher(
-    onOpened: (Uri) -> Unit
-): ManagedActivityResultLauncher<Array<String>, Uri?> {
-    val context = LocalContext.current
-    return rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            CsvUriStore.save(context, uri)
-            onOpened(uri)
-        }
-    }
 }

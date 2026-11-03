@@ -81,12 +81,12 @@ fun ExpenseItem(expense: Expense,
                         onDelete(expense)        // update UI list
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.onError)
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onPrimary)
+                    Text("Cancel")
                 }
             }
         )
@@ -135,7 +135,7 @@ fun ExpenseItem(expense: Expense,
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Delete",
-                            tint = MaterialTheme.colorScheme.onError
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -151,8 +151,8 @@ fun ExpenseItem(expense: Expense,
             }
             Spacer(modifier = Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(expense.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                Text(expense.paymentMode, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(expense.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(expense.paymentMode, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

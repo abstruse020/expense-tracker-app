@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Info
 import com.example.expensetrackerv2.ui.addexpense.AddExpenseScreen
 import com.example.expensetrackerv2.ui.overview.OverviewScreen
+import com.example.expensetrackerv2.ui.settings.SettingsScreen
+import androidx.compose.material.icons.filled.Settings
 
 
 class MainActivity : ComponentActivity() {
@@ -68,7 +70,8 @@ fun ExpenseTrackerV2App() {
             when (currentDestination) {
                 AppDestinations.ADD -> AddExpenseScreen(Modifier.padding(innerPadding))
                 AppDestinations.EXPENSES -> ExpensesListScreen(Modifier.padding(innerPadding))
-                AppDestinations.OVERVIEW -> OverviewScreen( Modifier.padding(innerPadding))
+                AppDestinations.OVERVIEW -> OverviewScreen(Modifier.padding(innerPadding))
+                AppDestinations.SETTINGS -> SettingsScreen(Modifier.padding(innerPadding))
             }
         }
     }
@@ -81,6 +84,7 @@ enum class AppDestinations(
     ADD("Add", Icons.Default.AddCircle),
     EXPENSES("List", Icons.Default.Menu),
     OVERVIEW("Overview", Icons.Default.Info),
+    SETTINGS("Settings", Icons.Default.Settings),
 }
 
 @Composable

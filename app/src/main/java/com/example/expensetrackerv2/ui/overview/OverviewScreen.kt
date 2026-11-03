@@ -26,6 +26,12 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import java.time.LocalDate
+import java.time.Month
+import java.time.format.TextStyle
+import java.util.Locale
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import com.example.expensetrackerv2.ui.components.DropdownField
 
 
 data class BarEntry(
@@ -66,11 +72,19 @@ fun OverviewScreen(modifier: Modifier = Modifier) {
 fun CategorySpendingScreen(
     expenses: List<Expense>
 ) {
-    var monthText by remember { mutableStateOf(LocalDate.now().monthValue.toString()) }
-    var yearText by remember { mutableStateOf(LocalDate.now().year.toString()) }
+    var month by rememberSaveable { mutableStateOf(LocalDate.now().monthValue) }
+    var year by rememberSaveable { mutableStateOf(LocalDate.now().year) }
 
-    val month = monthText.toIntOrNull()?.coerceIn(1, 12) ?: 1
-    val year = yearText.toIntOrNull() ?: LocalDate.now().year
+    val monthNames = remember {
+        Month.entries.map { it.getDisplayName(TextStyle.FULL, Locale.getDefault()) }
+    }
+    // Years that have expenses, plus the current and selected year so there's always a choice.
+    val years = remember(expenses, year) {
+        (expenses.mapNotNull { runCatching { LocalDate.parse(it.date).year }.getOrNull() } +
+            LocalDate.now().year + year)
+            .distinct()
+            .sortedDescending()
+    }
 
     val filtered = remember(expenses, month, year) {
         filterExpenses(expenses, month, year)
@@ -102,19 +116,25 @@ fun CategorySpendingScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            OutlinedTextField(
-                value = monthText,
-                onValueChange = { monthText = it },
-                label = { Text("Month (1-12)") },
-                modifier = Modifier.weight(1f)
-            )
-
-            OutlinedTextField(
-                value = yearText,
-                onValueChange = { yearText = it },
-                label = { Text("Year") },
-                modifier = Modifier.weight(1f)
-            )
+            val fieldColors = OutlinedTextFieldDefaults.colors()
+            Box(modifier = Modifier.weight(1f)) {
+                DropdownField(
+                    label = "Month",
+                    options = monthNames,
+                    customTextFieldColorObject = fieldColors,
+                    selected = monthNames[month - 1],
+                    onSelected = { month = monthNames.indexOf(it) + 1 }
+                )
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                DropdownField(
+                    label = "Year",
+                    options = years.map { it.toString() },
+                    customTextFieldColorObject = fieldColors,
+                    selected = year.toString(),
+                    onSelected = { year = it.toInt() }
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))

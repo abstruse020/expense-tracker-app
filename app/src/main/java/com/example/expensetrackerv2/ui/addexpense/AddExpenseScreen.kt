@@ -2,6 +2,7 @@ package com.example.expensetrackerv2.ui.addexpense
 
 import com.example.expensetrackerv2.ui.components.AppCardContent
 import com.example.expensetrackerv2.ui.components.AppHeader
+import com.example.expensetrackerv2.ui.components.DropdownField
 import com.example.expensetrackerv2.ui.theme.*
 import android.content.Intent
 import android.net.Uri
@@ -330,68 +331,6 @@ fun ExpenseScaffold(
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DropdownField(
-    label: String,
-    options: List<String>,
-    customTextFieldColorObject: TextFieldColors,
-    selected: String,
-    onSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        OutlinedTextField(
-            value = selected,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            },
-            colors = customTextFieldColorObject,
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryEditable)
-        )
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            option,
-                            fontWeight = if (option == selected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (option == selected)
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            else
-                                MaterialTheme.colorScheme.onSurface
-                        )
-                    },
-                    onClick = {
-                        onSelected(option)
-                        expanded = false
-                    },
-                    // Highlight selected item background
-                    modifier = if (option == selected)
-                        Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
-                    else
-                        Modifier
-                )
-            }
-        }
-    }
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

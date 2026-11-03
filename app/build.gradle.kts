@@ -21,8 +21,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing is configured from ~/.gradle/gradle.properties so that no
+    // keystore path or password is stored in the project. Without those properties,
+    // the release build is simply left unsigned.
+    signingConfigs {
+        val storeFilePath = providers.gradleProperty("EXPENSE_TRACKER_STORE_FILE").orNull
+        if (storeFilePath != null) {
+            create("release") {
+                storeFile = file(storeFilePath)
+                storePassword = providers.gradleProperty("EXPENSE_TRACKER_STORE_PASSWORD").orNull
+                keyAlias = providers.gradleProperty("EXPENSE_TRACKER_KEY_ALIAS").orNull
+                keyPassword = providers.gradleProperty("EXPENSE_TRACKER_KEY_PASSWORD").orNull
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

@@ -32,7 +32,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 
 import androidx.compose.ui.unit.dp
 
@@ -48,15 +53,87 @@ fun ExpensesListScreen(modifier: Modifier = Modifier) {
                 .thenByDescending{it.dateAdded}
             )
     }
-    // val snackbarHostState = remember { SnackbarHostState() }
-    LazyColumn(modifier = modifier.padding(16.dp)) {
-        items(expenses) { expense ->
-            ExpenseItem(
-                expense = expense,
-                onDelete = { toDelete ->
-                    expenses = expenses.filter { it != toDelete }
+    var query by remember { mutableStateOf("") }
+    var searchFields by remember { mutableStateOf(DefaultSearchFields) }
+    val visibleExpenses = remember(expenses, query, searchFields) {
+        searchExpenses(expenses, query, searchFields)
+    }
+
+    Column(modifier = modifier.padding(horizontal = 16.dp)) {
+        SearchBar(
+            query = query,
+            onQueryChange = { query = it },
+            selectedFields = searchFields,
+            onToggleField = { field ->
+                searchFields = when {
+                    field !in searchFields -> searchFields + field
+                    searchFields.size > 1 -> searchFields - field // keep at least one
+                    else -> searchFields
                 }
+            }
+        )
+        if (visibleExpenses.isEmpty() && expenses.isNotEmpty()) {
+            Text(
+                "No expenses match your search",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 16.dp)
             )
+        }
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(visibleExpenses) { expense ->
+                ExpenseItem(
+                    expense = expense,
+                    onDelete = { toDelete ->
+                        expenses = expenses.filter { it != toDelete }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    selectedFields: Set<SearchField>,
+    onToggleField: (SearchField) -> Unit,
+) {
+    Column(modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            singleLine = true,
+            label = { Text("Search expenses") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear search")
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text(
+            "Search in",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            SearchField.entries.forEach { field ->
+                FilterChip(
+                    selected = field in selectedFields,
+                    onClick = { onToggleField(field) },
+                    label = { Text(field.label) },
+                )
+            }
         }
     }
 }

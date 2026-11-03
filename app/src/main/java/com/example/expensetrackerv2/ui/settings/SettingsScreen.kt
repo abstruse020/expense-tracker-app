@@ -1,5 +1,6 @@
 package com.example.expensetrackerv2.ui.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,7 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -27,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,8 +39,28 @@ import com.example.expensetrackerv2.data.CsvUriStore
 import com.example.expensetrackerv2.ui.components.AppHeader
 import kotlinx.coroutines.launch
 
+private enum class SettingsPage { MAIN, CATEGORIES, PAYMENT_MODES }
+
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
+    var page by rememberSaveable { mutableStateOf(SettingsPage.MAIN) }
+    BackHandler(enabled = page != SettingsPage.MAIN) { page = SettingsPage.MAIN }
+
+    when (page) {
+        SettingsPage.MAIN -> SettingsMainPage(
+            onOpenCategories = { page = SettingsPage.CATEGORIES },
+            onOpenPaymentModes = { page = SettingsPage.PAYMENT_MODES }
+        )
+        SettingsPage.CATEGORIES -> CategoriesPage(onBack = { page = SettingsPage.MAIN })
+        SettingsPage.PAYMENT_MODES -> PaymentModesPage(onBack = { page = SettingsPage.MAIN })
+    }
+}
+
+@Composable
+private fun SettingsMainPage(
+    onOpenCategories: () -> Unit,
+    onOpenPaymentModes: () -> Unit,
+) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -65,6 +89,20 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             leadingContent = { Icon(Icons.Default.List, contentDescription = null) },
             headlineContent = { Text("Setup file") },
             supportingContent = { Text(fileName ?: "No file selected") }
+        )
+        HorizontalDivider()
+        ListItem(
+            modifier = Modifier.clickable(onClick = onOpenCategories),
+            leadingContent = { Icon(Icons.Default.Menu, contentDescription = null) },
+            headlineContent = { Text("Categories") },
+            supportingContent = { Text("Add, rename or remove categories and sub-categories") }
+        )
+        HorizontalDivider()
+        ListItem(
+            modifier = Modifier.clickable(onClick = onOpenPaymentModes),
+            leadingContent = { Icon(Icons.Default.AddCircle, contentDescription = null) },
+            headlineContent = { Text("Payment modes") },
+            supportingContent = { Text("Add, rename or remove payment modes") }
         )
         HorizontalDivider()
     }

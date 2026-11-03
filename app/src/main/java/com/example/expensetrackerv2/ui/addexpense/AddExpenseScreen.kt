@@ -72,7 +72,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import com.example.expensetrackerv2.data.CategoryData
+import com.example.expensetrackerv2.data.ExpenseOptionsStore
 import com.example.expensetrackerv2.data.CsvUriStore
 import com.example.expensetrackerv2.data.saveExpense
 import kotlinx.coroutines.launch
@@ -84,23 +84,37 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddExpenseScreen(modifier: Modifier = Modifier) {
 
-    var paymentMode by rememberSaveable { mutableStateOf("UPI") }
+    val context = LocalContext.current
+    // Lists are read each time this screen opens, so edits made in Settings show up here.
+    val categoryList = remember { ExpenseOptionsStore.getCategories(context) }
+    val paymentModes = remember { ExpenseOptionsStore.getPaymentModes(context) }
+    val categories = categoryList.map { it.name }
+
+    var paymentMode by rememberSaveable {
+        mutableStateOf(if ("UPI" in paymentModes) "UPI" else paymentModes.first())
+    }
     var amount by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var date by rememberSaveable { mutableStateOf(LocalDate.now()) }
-    val categories = CategoryData.categories.map { it.name }
     var category by rememberSaveable { mutableStateOf(categories.first()) }
     var subCategory by rememberSaveable { mutableStateOf("") }
-    val subCategories = CategoryData.categories
+    val subCategories = categoryList
         .find { it.name == category }
         ?.subCategories ?: emptyList()
+
+    // Reset selections that no longer exist (e.g. deleted in Settings, or restored state).
+    LaunchedEffect(categories) {
+        if (category !in categories) category = categories.first()
+    }
+    LaunchedEffect(paymentModes) {
+        if (paymentMode !in paymentModes) paymentMode = paymentModes.first()
+    }
     LaunchedEffect(category) {
         if (subCategory !in subCategories){
             subCategory = subCategories.firstOrNull() ?: ""
         }
     }
 
-    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val purpleTextFieldColors = OutlinedTextFieldDefaults.colors(
@@ -135,7 +149,7 @@ fun AddExpenseScreen(modifier: Modifier = Modifier) {
             )
             DropdownField(
                 label = "Payment Mode",
-                options = listOf("Cash", "UPI", "SBI Elite", "SBI Cashback", "Scapia", "Splitwise"),
+                options = paymentModes,
                 customTextFieldColorObject = purpleTextFieldColors,
                 selected = paymentMode,
                 onSelected = { paymentMode = it }

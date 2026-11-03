@@ -18,6 +18,8 @@ import com.example.expensetrackerv2.model.Expense
 import java.time.format.DateTimeFormatter
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -216,6 +218,7 @@ fun SpendingBarChart(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(18.dp)
+                            .clip(RoundedCornerShape(50))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
 
@@ -223,6 +226,7 @@ fun SpendingBarChart(
                             modifier = Modifier
                                 .fillMaxHeight()
                                 .fillMaxWidth(ratio)
+                                .clip(RoundedCornerShape(50))
                                 .background(MaterialTheme.colorScheme.primary)
                         )
                     }

@@ -1,6 +1,9 @@
 package com.example.expensetrackerv2.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
+import com.example.expensetrackerv2.ui.theme.HeaderGradientBottomDark
+import com.example.expensetrackerv2.ui.theme.HeaderGradientTopDark
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,8 +37,9 @@ fun AppHeader(
     subtitle: String = "",
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val gradientTop = MaterialTheme.colorScheme.secondary
-    val gradientBottom = MaterialTheme.colorScheme.primary
+    val dark = isSystemInDarkTheme()
+    val gradientTop = if (dark) HeaderGradientTopDark else MaterialTheme.colorScheme.secondary
+    val gradientBottom = if (dark) HeaderGradientBottomDark else MaterialTheme.colorScheme.primary
     val bgPrimary = MaterialTheme.colorScheme.background
     // The title is laid out below the gradient box (top padding = header height),
     // so it sits on the page background, not on the gradient.

@@ -27,6 +27,10 @@ description and amount as the main line and category / sub-category as tags), ad
 detail page opened by tapping a card (hero panel, icon tiles, delete at the top right), and
 reworked Overview (total-money-out panel with an expenses / savings split, one bar per category (expenses and savings in separate sections) that expands to sub-category bars).
 
+**1.3 (versionCode 4)** added saving categories (Settings > Categories: "Counts as saving"), an
+Overview that splits total money out into expenses and savings with separate category sections, and
+Indian digit grouping for Overview amounts.
+
 ## Structure
 
 ```

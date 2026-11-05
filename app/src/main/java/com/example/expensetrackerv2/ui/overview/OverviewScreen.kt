@@ -38,7 +38,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.example.expensetrackerv2.ui.expenses.cardContainerColor
-import com.example.expensetrackerv2.ui.expenses.formatAmount
 import com.example.expensetrackerv2.ui.expenses.isLightTheme
 import kotlin.math.roundToInt
 import androidx.compose.material3.MaterialTheme
@@ -333,7 +332,7 @@ fun buildOverviewSummary(
     )
 }
 
-private fun money(value: Double) = formatAmount(value.toFloat())
+private fun money(value: Double) = formatRupees(value)
 
 /** The month's total, shown above all categories. */
 @Composable

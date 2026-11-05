@@ -63,10 +63,11 @@ app/src/main/res/values{,-night}/   Window theme + `window_background` color (pr
   names. Renaming therefore only affects new expenses.
 - A category can be flagged `isSaving` (Settings > Categories: "Counts as saving", or the checkbox when
   adding one; stored in the categories JSON; lists saved before the flag existed treat a category named
-  "Saving" as saving). The Overview totals saving categories separately from expenses (total money out =
+  "Saving" or "Savings", any case, as saving: `ExpenseOptionsStore.looksLikeSaving`). The Overview totals saving categories separately from expenses (total money out =
   expenses + savings). Expense rows hold only the category *name*, so the split is matched by name against
   the *current* settings: a renamed or deleted saving category's old rows count as expenses. Settings warns
-  about this when renaming a saving category.
+  about this when renaming a saving category; flagging both the old and new name as saving avoids it.
+- Overview amounts use Indian digit grouping (`formatRupees`, e.g. ₹1,23,456.50); the Expenses list still uses `formatAmount` without separators.
 - Colors: use `MaterialTheme.colorScheme` roles in pairs (`primary`/`onPrimary`,
   `secondaryContainer`/`onSecondaryContainer`, ...). Do not hardcode colors. Dark mode defines the
   `surfaceContainer*` family explicitly; light mode relies on Material defaults.

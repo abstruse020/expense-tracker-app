@@ -18,6 +18,13 @@ object ExpenseOptionsStore {
 
     val defaultPaymentModes = listOf("Cash", "UPI", "SBI Elite", "SBI Cashback", "Scapia", "Splitwise")
 
+    /**
+     * For lists saved before the saving flag existed: a category named "Saving" or "Savings"
+     * (any case) is treated as a saving. Explicitly stored flags always win.
+     */
+    fun looksLikeSaving(name: String): Boolean =
+        name.trim().lowercase() in setOf("saving", "savings")
+
     fun getCategories(context: Context): List<Category> {
         val json = prefs(context).getString(KEY_CATEGORIES, null)
             ?: return CategoryData.categories
@@ -30,8 +37,7 @@ object ExpenseOptionsStore {
                 Category(
                     name,
                     (0 until subs.length()).map { subs.getString(it) },
-                    // Lists saved before the flag existed: the built-in "Saving" category stays a saving.
-                    isSaving = obj.optBoolean("isSaving", name.equals("Saving", ignoreCase = true))
+                    isSaving = obj.optBoolean("isSaving", looksLikeSaving(name))
                 )
             }.filter { it.subCategories.isNotEmpty() }
                 .ifEmpty { CategoryData.categories }

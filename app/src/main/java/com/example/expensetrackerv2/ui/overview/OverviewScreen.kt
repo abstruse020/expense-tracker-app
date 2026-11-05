@@ -23,6 +23,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
+import com.example.expensetrackerv2.data.ExpenseOptionsStore
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.material.icons.Icons
@@ -83,13 +85,18 @@ fun OverviewScreen(modifier: Modifier = Modifier) {
 //        data = chartData,
 //        modifier = Modifier.fillMaxWidth()
 //    )
-    CategorySpendingScreen(expenses)
+    // Read when the tab opens, so a change made in Settings applies the next time you come here.
+    val savingCategoryNames = remember {
+        ExpenseOptionsStore.getCategories(context).filter { it.isSaving }.map { it.name }.toSet()
+    }
+    CategorySpendingScreen(expenses, savingCategoryNames)
 }
 
 
 @Composable
 fun CategorySpendingScreen(
     expenses: List<Expense>,
+    savingCategoryNames: Set<String> = emptySet(),
     initiallyExpanded: String? = null
 ) {
     var month by rememberSaveable { mutableStateOf(LocalDate.now().monthValue) }
@@ -110,8 +117,9 @@ fun CategorySpendingScreen(
         filterExpenses(expenses, month, year)
     }
 
-    val categories = remember(filtered) { buildCategorySpending(filtered) }
-    val total = remember(filtered) { totalSpent(filtered) }
+    val summary = remember(filtered, savingCategoryNames) {
+        buildOverviewSummary(filtered, savingCategoryNames)
+    }
     // Accordion: only one category is open at a time.
     var expandedCategory by rememberSaveable { mutableStateOf(initiallyExpanded) }
 
@@ -161,6 +169,11 @@ fun CategorySpendingScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         // ---------------- TOTAL + CATEGORY BARS ----------------
+        // Theme colours can only be read in composable code, not inside the LazyColumn builder.
+        val expenseBar = MaterialTheme.colorScheme.primary
+        val expenseSubBar = MaterialTheme.colorScheme.secondary
+        val savingBar = MaterialTheme.colorScheme.tertiary
+        val savingSubBar = savingBar.copy(alpha = 0.6f)
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -168,12 +181,30 @@ fun CategorySpendingScreen(
         ) {
             item {
                 TotalSpentPanel(
-                    total = total,
+                    total = summary.grandTotal,
                     expenseCount = filtered.size,
                     period = "${monthNames[month - 1]} $year"
                 )
             }
-            if (categories.isEmpty()) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SplitTile(
+                        label = "Expenses",
+                        amount = summary.expenseTotal,
+                        container = cardContainerColor(),
+                        content = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SplitTile(
+                        label = "Savings",
+                        amount = summary.savingTotal,
+                        container = MaterialTheme.colorScheme.tertiaryContainer,
+                        content = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            if (filtered.isEmpty()) {
                 item {
                     Text(
                         "No expenses in this month",
@@ -181,29 +212,58 @@ fun CategorySpendingScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            } else {
-                item {
-                    Text(
-                        "Spending by category",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                val maxCategory = categories.first().total
-                items(categories, key = { it.name }) { category ->
-                    CategoryCard(
-                        category = category,
-                        maxCategoryTotal = maxCategory,
-                        grandTotal = total,
-                        expanded = expandedCategory == category.name,
-                        onToggle = {
-                            expandedCategory =
-                                if (expandedCategory == category.name) null else category.name
-                        }
-                    )
-                }
             }
+            categorySection(
+                title = "Spending by category",
+                shareLabel = "of expenses",
+                categories = summary.expenseCategories,
+                sectionTotal = summary.expenseTotal,
+                barColor = expenseBar,
+                subBarColor = expenseSubBar,
+                expandedCategory = expandedCategory,
+                onToggle = { expandedCategory = if (expandedCategory == it) null else it }
+            )
+            categorySection(
+                title = "Savings",
+                shareLabel = "of savings",
+                categories = summary.savingCategories,
+                sectionTotal = summary.savingTotal,
+                barColor = savingBar,
+                subBarColor = savingSubBar,
+                expandedCategory = expandedCategory,
+                onToggle = { expandedCategory = if (expandedCategory == it) null else it }
+            )
         }
+    }
+}
+
+/** A titled group of category cards; nothing is added when [categories] is empty. */
+private fun LazyListScope.categorySection(
+    title: String,
+    shareLabel: String,
+    categories: List<CategorySpend>,
+    sectionTotal: Double,
+    barColor: Color,
+    subBarColor: Color,
+    expandedCategory: String?,
+    onToggle: (String) -> Unit
+) {
+    if (categories.isEmpty()) return
+    item(key = "title-$title") {
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    }
+    val max = categories.first().total
+    items(categories, key = { "$title/${it.name}" }) { category ->
+        CategoryCard(
+            category = category,
+            maxCategoryTotal = max,
+            sectionTotal = sectionTotal,
+            shareLabel = shareLabel,
+            barColor = barColor,
+            subBarColor = subBarColor,
+            expanded = expandedCategory == category.name,
+            onToggle = { onToggle(category.name) }
+        )
     }
 }
 
@@ -244,6 +304,35 @@ fun buildCategorySpending(expenses: List<Expense>): List<CategorySpend> =
         }
         .sortedByDescending { it.total }
 
+data class OverviewSummary(
+    val expenseTotal: Double,
+    val savingTotal: Double,
+    val expenseCategories: List<CategorySpend>,
+    val savingCategories: List<CategorySpend>
+) {
+    /** All the money that went out: expenses plus savings. */
+    val grandTotal: Double get() = expenseTotal + savingTotal
+}
+
+/**
+ * Splits [expenses] into savings (categories named in [savingCategoryNames], case-insensitive)
+ * and everything else. Rows are matched by category name, as stored in the CSV, so a category
+ * that was renamed or deleted since an expense was saved counts as an expense.
+ */
+fun buildOverviewSummary(
+    expenses: List<Expense>,
+    savingCategoryNames: Set<String>
+): OverviewSummary {
+    val saving = savingCategoryNames.map { it.lowercase() }.toSet()
+    val (savings, rest) = expenses.partition { it.category.lowercase() in saving }
+    return OverviewSummary(
+        expenseTotal = totalSpent(rest),
+        savingTotal = totalSpent(savings),
+        expenseCategories = buildCategorySpending(rest),
+        savingCategories = buildCategorySpending(savings)
+    )
+}
+
 private fun money(value: Double) = formatAmount(value.toFloat())
 
 /** The month's total, shown above all categories. */
@@ -257,7 +346,7 @@ private fun TotalSpentPanel(total: Double, expenseCount: Int, period: String) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-            Text("Total spent", style = MaterialTheme.typography.labelLarge)
+            Text("Total money out", style = MaterialTheme.typography.labelLarge)
             Text(
                 money(total),
                 style = MaterialTheme.typography.displaySmall,
@@ -271,16 +360,40 @@ private fun TotalSpentPanel(total: Double, expenseCount: Int, period: String) {
     }
 }
 
+/** One half of the expenses / savings split under the total. */
+@Composable
+private fun SplitTile(
+    label: String,
+    amount: Double,
+    container: Color,
+    content: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(color = container, contentColor = content, shape = RoundedCornerShape(16.dp), modifier = modifier) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(label, style = MaterialTheme.typography.labelLarge)
+            Text(
+                money(amount),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
 /** A category bar; tap it to show its sub-category bars underneath. */
 @Composable
 private fun CategoryCard(
     category: CategorySpend,
     maxCategoryTotal: Double,
-    grandTotal: Double,
+    sectionTotal: Double,
+    shareLabel: String,
+    barColor: Color,
+    subBarColor: Color,
     expanded: Boolean,
     onToggle: () -> Unit
 ) {
-    val share = if (grandTotal > 0) (category.total / grandTotal * 100).roundToInt() else 0
+    val share = if (sectionTotal > 0) (category.total / sectionTotal * 100).roundToInt() else 0
     val chevronAngle by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
 
     Card(
@@ -313,10 +426,10 @@ private fun CategoryCard(
             SpendBar(
                 ratio = (category.total / maxCategoryTotal).toFloat(),
                 height = 14.dp,
-                color = MaterialTheme.colorScheme.primary
+                color = barColor
             )
             Text(
-                "$share% of total",
+                "$share% $shareLabel",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
@@ -341,7 +454,7 @@ private fun CategoryCard(
                             SpendBar(
                                 ratio = (sub.total / category.total).toFloat(),
                                 height = 8.dp,
-                                color = MaterialTheme.colorScheme.secondary
+                                color = subBarColor
                             )
                         }
                     }

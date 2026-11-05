@@ -2,6 +2,10 @@ package com.example.expensetrackerv2.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Switch
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -45,10 +49,15 @@ fun CategoriesPage(onBack: () -> Unit) {
     var categories by remember { mutableStateOf(ExpenseOptionsStore.getCategories(context)) }
     var expanded by remember { mutableStateOf<String?>(null) }
     var dialog by remember { mutableStateOf<CategoryDialog?>(null) }
+    var newCategoryIsSaving by remember { mutableStateOf(false) }
 
     fun update(new: List<Category>) {
         categories = new
         ExpenseOptionsStore.saveCategories(context, new)
+    }
+
+    fun setSaving(category: String, saving: Boolean) {
+        update(categories.map { if (it.name == category) it.copy(isSaving = saving) else it })
     }
 
     fun updateSubs(category: String, transform: (List<String>) -> List<String>) {
@@ -67,7 +76,12 @@ fun CategoriesPage(onBack: () -> Unit) {
             ListItem(
                 modifier = Modifier.clickable { expanded = if (isOpen) null else category.name },
                 headlineContent = { Text(category.name) },
-                supportingContent = { Text("${category.subCategories.size} sub-categories") },
+                supportingContent = {
+                    Text(
+                        "${category.subCategories.size} sub-categories" +
+                            if (category.isSaving) " · Saving" else ""
+                    )
+                },
                 leadingContent = {
                     Icon(
                         if (isOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -94,6 +108,19 @@ fun CategoriesPage(onBack: () -> Unit) {
                 }
             )
             if (isOpen) {
+                ListItem(
+                    modifier = Modifier
+                        .padding(start = 24.dp)
+                        .clickable { setSaving(category.name, !category.isSaving) },
+                    headlineContent = { Text("Counts as saving") },
+                    supportingContent = { Text("Shown under Savings in the Overview, not in expenses") },
+                    trailingContent = {
+                        Switch(
+                            checked = category.isSaving,
+                            onCheckedChange = { setSaving(category.name, it) }
+                        )
+                    }
+                )
                 category.subCategories.forEach { sub ->
                     ListItem(
                         modifier = Modifier.padding(start = 24.dp),
@@ -131,7 +158,10 @@ fun CategoriesPage(onBack: () -> Unit) {
         }
 
         ListItem(
-            modifier = Modifier.clickable { dialog = CategoryDialog.AddCategory },
+            modifier = Modifier.clickable {
+                newCategoryIsSaving = false
+                dialog = CategoryDialog.AddCategory
+            },
             leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
             headlineContent = { Text("Add category") },
             supportingContent = { Text("Starts with an \"$DEFAULT_SUB\" sub-category") }
@@ -143,17 +173,30 @@ fun CategoriesPage(onBack: () -> Unit) {
             title = "Add category",
             existing = categories.map { it.name },
             onConfirm = { name ->
-                update(categories + Category(name, listOf(DEFAULT_SUB)))
+                update(categories + Category(name, listOf(DEFAULT_SUB), isSaving = newCategoryIsSaving))
                 expanded = name
                 dialog = null
             },
-            onDismiss = { dialog = null }
+            onDismiss = { dialog = null },
+            extra = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { newCategoryIsSaving = !newCategoryIsSaving }
+                        .padding(top = 8.dp)
+                ) {
+                    Checkbox(checked = newCategoryIsSaving, onCheckedChange = { newCategoryIsSaving = it })
+                    Text("Counts as saving (e.g. SIP, FD)")
+                }
+            }
         )
         is CategoryDialog.RenameCategory -> NameDialog(
             title = "Rename category",
             initial = d.name,
             existing = categories.map { it.name },
-            note = RENAME_NOTE,
+            note = if (categories.find { it.name == d.name }?.isSaving == true) RENAME_SAVING_NOTE
+                   else RENAME_NOTE,
             onConfirm = { new ->
                 update(categories.map { if (it.name == d.name) it.copy(name = new) else it })
                 if (expanded == d.name) expanded = new

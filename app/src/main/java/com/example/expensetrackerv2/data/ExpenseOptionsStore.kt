@@ -26,7 +26,13 @@ object ExpenseOptionsStore {
             (0 until arr.length()).map { i ->
                 val obj = arr.getJSONObject(i)
                 val subs = obj.getJSONArray("subCategories")
-                Category(obj.getString("name"), (0 until subs.length()).map { subs.getString(it) })
+                val name = obj.getString("name")
+                Category(
+                    name,
+                    (0 until subs.length()).map { subs.getString(it) },
+                    // Lists saved before the flag existed: the built-in "Saving" category stays a saving.
+                    isSaving = obj.optBoolean("isSaving", name.equals("Saving", ignoreCase = true))
+                )
             }.filter { it.subCategories.isNotEmpty() }
                 .ifEmpty { CategoryData.categories }
         } catch (e: Exception) {
@@ -41,6 +47,7 @@ object ExpenseOptionsStore {
                 JSONObject()
                     .put("name", c.name)
                     .put("subCategories", JSONArray(c.subCategories))
+                    .put("isSaving", c.isSaving)
             )
         }
         prefs(context).edit { putString(KEY_CATEGORIES, arr.toString()) }

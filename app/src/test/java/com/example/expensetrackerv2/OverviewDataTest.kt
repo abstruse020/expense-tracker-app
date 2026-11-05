@@ -39,3 +39,37 @@ class OverviewDataTest {
         assertEquals(emptyList<Any>(), buildCategorySpending(emptyList()))
     }
 }
+
+class OverviewSummaryTest {
+    private fun e(cat: String, sub: String, amount: Float) =
+        Expense(cat, sub, "", amount, "UPI", "2026-11-05", "id-$cat-$sub-$amount")
+
+    private val expenses = listOf(
+        e("Food", "Groceries", 300f),
+        e("Transport", "Cab", 200f),
+        e("Saving", "SIP", 1000f),
+        e("Saving", "FD", 500f),
+        e("Retirement", "NPS", 250f),
+    )
+
+    @Test fun savingCategoriesAreTotalledSeparately() {
+        val s = com.example.expensetrackerv2.ui.overview.buildOverviewSummary(expenses, setOf("Saving", "Retirement"))
+        assertEquals(500.0, s.expenseTotal, 0.001)
+        assertEquals(1750.0, s.savingTotal, 0.001)
+        assertEquals(2250.0, s.grandTotal, 0.001)
+        assertEquals(listOf("Food", "Transport"), s.expenseCategories.map { it.name })
+        assertEquals(listOf("Saving", "Retirement"), s.savingCategories.map { it.name })
+    }
+
+    @Test fun matchingIgnoresCase() {
+        val s = com.example.expensetrackerv2.ui.overview.buildOverviewSummary(expenses, setOf("saving"))
+        assertEquals(1500.0, s.savingTotal, 0.001)
+    }
+
+    @Test fun withNoSavingCategoriesEverythingIsAnExpense() {
+        val s = com.example.expensetrackerv2.ui.overview.buildOverviewSummary(expenses, emptySet())
+        assertEquals(2250.0, s.expenseTotal, 0.001)
+        assertEquals(0.0, s.savingTotal, 0.001)
+        assertEquals(emptyList<Any>(), s.savingCategories)
+    }
+}

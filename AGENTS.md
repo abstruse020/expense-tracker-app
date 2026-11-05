@@ -25,7 +25,7 @@ in dark mode, rounder input corners, release signing, and the app rename (droppe
 **1.2 (versionCode 3)** redesigned the Expenses list (date dividers, one card per expense with the
 description and amount as the main line and category / sub-category as tags), added an expense
 detail page opened by tapping a card (hero panel, icon tiles, delete at the top right), and
-reworked Overview (total-spent panel, one bar per category that expands to sub-category bars).
+reworked Overview (total-money-out panel with an expenses / savings split, one bar per category (expenses and savings in separate sections) that expands to sub-category bars).
 
 ## Structure
 
@@ -45,7 +45,7 @@ app/src/main/java/com/example/expensetrackerv2/
     ├── components/          AppHeader, AppCard (AppCardContent), DropdownField
     ├── addexpense/          AddExpenseScreen
     ├── expenses/            ExpensesListScreen (date dividers + one card per expense; tap a card to open it), ExpenseDetailScreen (hero panel with amount, description and tags, plus icon tiles; delete at top right; `DetailTile` is where fields become editable), ExpenseSearch (pure search logic)
-    ├── overview/            OverviewScreen (month/year dropdowns, total-spent panel, one bar per category that expands to sub-category bars; grouping logic is pure and tested in OverviewDataTest)
+    ├── overview/            OverviewScreen (month/year dropdowns, total-money-out panel with an expenses / savings split, one bar per category (expenses and savings in separate sections) that expands to sub-category bars; grouping logic is pure and tested in OverviewDataTest incl. the savings split)
     └── settings/            SettingsScreen (router), CategoriesPage, PaymentModesPage, OptionDialogs, CsvLaunchers
 app/src/test/                JVM unit tests (OptionValidatorTest, ExpenseSearchTest, OverviewDataTest)
 app/src/main/res/values{,-night}/   Window theme + `window_background` color (prevents a white flash in dark mode)
@@ -61,6 +61,12 @@ app/src/main/res/values{,-night}/   Window theme + `window_background` color (pr
 - Expenses store category, sub-category and payment mode as plain text, not ids. Deleting or
   renaming an option never changes existing rows; the Overview and list keep showing the old
   names. Renaming therefore only affects new expenses.
+- A category can be flagged `isSaving` (Settings > Categories: "Counts as saving", or the checkbox when
+  adding one; stored in the categories JSON; lists saved before the flag existed treat a category named
+  "Saving" as saving). The Overview totals saving categories separately from expenses (total money out =
+  expenses + savings). Expense rows hold only the category *name*, so the split is matched by name against
+  the *current* settings: a renamed or deleted saving category's old rows count as expenses. Settings warns
+  about this when renaming a saving category.
 - Colors: use `MaterialTheme.colorScheme` roles in pairs (`primary`/`onPrimary`,
   `secondaryContainer`/`onSecondaryContainer`, ...). Do not hardcode colors. Dark mode defines the
   `surfaceContainer*` family explicitly; light mode relies on Material defaults.

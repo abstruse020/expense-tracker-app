@@ -26,6 +26,7 @@ fun NameDialog(
     onDismiss: () -> Unit,
     initial: String = "",
     note: String? = null,
+    extra: (@Composable () -> Unit)? = null,
 ) {
     var text by remember { mutableStateOf(initial) }
     val error = OptionValidator.validate(text, existing, ignore = initial.ifEmpty { null })
@@ -53,6 +54,7 @@ fun NameDialog(
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
+                extra?.invoke()
             }
         },
         confirmButton = {
@@ -85,4 +87,6 @@ fun ConfirmDeleteDialog(
 }
 
 const val RENAME_NOTE = "Existing expenses keep the old name. Only new expenses use the new one."
+const val RENAME_SAVING_NOTE = RENAME_NOTE +
+    " Those old expenses will therefore be counted as expenses, not savings, in the Overview."
 const val DELETE_NOTE = "Existing expenses keep this name and still appear in the list and overview."

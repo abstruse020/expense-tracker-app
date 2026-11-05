@@ -10,7 +10,7 @@ object CategoryData {
             "Outing", "Travel", "Others")),
         Category("Saving", listOf(
             "SIP", "Mutual Funds", "PPF",
-            "FD", "Others")),
+            "FD", "Others"), isSaving = true),
         Category("Family", listOf(
             "Baba Ma", "Ghar", "Us",
             "Others"))

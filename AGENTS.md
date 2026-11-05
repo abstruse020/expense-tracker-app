@@ -22,6 +22,11 @@ modes), search on the Expenses list (tag-style field selector, description by de
 year dropdowns in Overview, a full light/dark Material 3 color scheme with no white flash at launch
 in dark mode, rounder input corners, release signing, and the app rename (dropped "V2").
 
+**1.2 (versionCode 3)** redesigned the Expenses list (date dividers, one card per expense with the
+description and amount as the main line and category / sub-category as tags), added an expense
+detail page opened by tapping a card (hero panel, icon tiles, delete at the top right), and
+reworked Overview (total-spent panel, one bar per category that expands to sub-category bars).
+
 ## Structure
 
 ```

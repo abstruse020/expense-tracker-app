@@ -1,6 +1,19 @@
 package com.example.expensetrackerv2.ui.expenses
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -107,51 +120,104 @@ fun ExpenseDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            HeroPanel(expense)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.height(IntrinsicSize.Min)
+            ) {
+                DetailTile(
+                    icon = Icons.Default.DateRange,
+                    label = "Date",
+                    value = formatLongDate(expense.date),
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                )
+                DetailTile(
+                    icon = Icons.Default.AddCircle,
+                    label = "Payment mode",
+                    value = expense.paymentMode,
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                )
+            }
+            DetailTile(
+                icon = Icons.Default.Info,
+                label = "Added on",
+                value = formatAddedOn(expense.dateAdded),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+/** Amount, description and category tags, on a primaryContainer panel. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun HeroPanel(expense: Expense) {
+    val content = MaterialTheme.colorScheme.onPrimaryContainer
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = content,
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp)
+        ) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Tag(expense.category, content.copy(alpha = 0.14f), content)
+                Tag(expense.subCategory, content.copy(alpha = 0.14f), content)
+            }
             Text(
                 formatAmount(expense.amount),
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 8.dp)
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.Bold
             )
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = cardContainerColor()),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = if (isLightTheme()) 1.dp else 0.dp
-                ),
-                modifier = Modifier.fillMaxWidth()
+            Text(
+                expense.description.ifBlank { expense.subCategory },
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+    }
+}
+
+/** One labelled fact with an icon. Swap [value] for an input here when editing is added. */
+@Composable
+private fun DetailTile(icon: ImageVector, label: String, value: String, modifier: Modifier = Modifier) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isLightTheme()) 1.dp else 0.dp),
+        modifier = modifier
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                shape = CircleShape
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    DetailField("Description", expense.description.ifBlank { "—" })
-                    DetailField("Category", expense.category)
-                    DetailField("Sub-category", expense.subCategory)
-                    DetailField("Payment mode", expense.paymentMode)
-                    DetailField("Date", formatLongDate(expense.date))
-                    DetailField("Added on", formatAddedOn(expense.dateAdded))
-                }
+                Icon(icon, contentDescription = null, modifier = Modifier.padding(8.dp).size(20.dp))
+            }
+            Column {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(value, style = MaterialTheme.typography.titleSmall)
             }
         }
     }
 }
 
-@Composable
-private fun DetailField(label: String, value: String) {
-    Column {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(value, style = MaterialTheme.typography.bodyLarge)
-    }
-}
-
 private fun formatLongDate(date: String): String =
     runCatching {
-        LocalDate.parse(date).format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+        LocalDate.parse(date).format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
     }.getOrDefault(date)
 
 private fun formatAddedOn(dateAdded: String): String =

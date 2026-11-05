@@ -40,9 +40,9 @@ app/src/main/java/com/example/expensetrackerv2/
     ├── components/          AppHeader, AppCard (AppCardContent), DropdownField
     ├── addexpense/          AddExpenseScreen
     ├── expenses/            ExpensesListScreen (date dividers + one card per expense; tap a card to open it), ExpenseDetailScreen (hero panel with amount, description and tags, plus icon tiles; delete at top right; `DetailTile` is where fields become editable), ExpenseSearch (pure search logic)
-    ├── overview/            OverviewScreen (month/year dropdowns, spending bars)
+    ├── overview/            OverviewScreen (month/year dropdowns, total-spent panel, one bar per category that expands to sub-category bars; grouping logic is pure and tested in OverviewDataTest)
     └── settings/            SettingsScreen (router), CategoriesPage, PaymentModesPage, OptionDialogs, CsvLaunchers
-app/src/test/                JVM unit tests (OptionValidatorTest, ExpenseSearchTest)
+app/src/test/                JVM unit tests (OptionValidatorTest, ExpenseSearchTest, OverviewDataTest)
 app/src/main/res/values{,-night}/   Window theme + `window_background` color (prevents a white flash in dark mode)
 ```
 

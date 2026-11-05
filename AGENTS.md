@@ -39,7 +39,7 @@ app/src/main/java/com/example/expensetrackerv2/
     ├── theme/               Theme.kt (color schemes, shapes), Color.kt, Type.kt
     ├── components/          AppHeader, AppCard (AppCardContent), DropdownField
     ├── addexpense/          AddExpenseScreen
-    ├── expenses/            ExpensesListScreen (date dividers + one card per expense; swipe left or long-press to delete), ExpenseSearch (pure search logic)
+    ├── expenses/            ExpensesListScreen (date dividers + one card per expense; tap a card to open it), ExpenseDetailScreen (all fields + delete at top right; fields are the place to make editable), ExpenseSearch (pure search logic)
     ├── overview/            OverviewScreen (month/year dropdowns, spending bars)
     └── settings/            SettingsScreen (router), CategoriesPage, PaymentModesPage, OptionDialogs, CsvLaunchers
 app/src/test/                JVM unit tests (OptionValidatorTest, ExpenseSearchTest)
@@ -61,7 +61,8 @@ app/src/main/res/values{,-night}/   Window theme + `window_background` color (pr
   `surfaceContainer*` family explicitly; light mode relies on Material defaults.
 - The `AppHeader` title is laid out below the gradient box, on the page background, so it uses
   `onBackground`, not `onPrimary`.
-- Expense cards use `surface` (white) with a 1dp shadow in light mode and `surfaceContainerLow` in dark mode, chosen in `ExpenseItem`; the theme files are untouched.
+- Expense cards use `surface` (white) with a 1dp shadow in light mode and `surfaceContainerLow` in dark mode, chosen in `cardContainerColor()` (ExpensesListScreen.kt); the theme files are untouched.
+- The Expenses tab opens an expense in-place (selected row id = `Date-Added`, with `BackHandler`); there is no navigation library.
 - `ExpensesListScreen` and `OverviewScreen` load data once with `LaunchedEffect(Unit)`.
 
 ## Build, sign and release pipeline

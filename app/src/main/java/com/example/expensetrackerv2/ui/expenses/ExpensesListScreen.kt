@@ -13,12 +13,15 @@ import androidx.compose.foundation.lazy.items
 
 import com.example.expensetrackerv2.model.Expense
 import com.example.expensetrackerv2.data.readExpenses
-import com.example.expensetrackerv2.data.deleteExpense
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
@@ -62,6 +65,24 @@ fun ExpensesListScreen(modifier: Modifier = Modifier) {
                 .thenByDescending{it.dateAdded}
             )
     }
+    // The row id is Date-Added; selecting by id keeps working after the list is reloaded or filtered.
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
+    val selected = expenses.firstOrNull { it.dateAdded == selectedId }
+    if (selected != null) {
+        BackHandler { selectedId = null }
+        ExpenseDetailScreen(
+            expense = selected,
+            onBack = { selectedId = null },
+            onDeleted = {
+                expenses = expenses.filter { it.dateAdded != selected.dateAdded }
+                selectedId = null
+            },
+            modifier = modifier
+        )
+        return
+    }
+
     var query by remember { mutableStateOf("") }
     var searchFields by remember { mutableStateOf(DefaultSearchFields) }
     val visibleExpenses = remember(expenses, query, searchFields) {
@@ -91,26 +112,28 @@ fun ExpensesListScreen(modifier: Modifier = Modifier) {
         }
         ExpensesList(
             expenses = visibleExpenses,
-            onDelete = { toDelete -> expenses = expenses.filter { it != toDelete } },
+            onClick = { selectedId = it.dateAdded },
+            listState = listState,
             modifier = Modifier.weight(1f)
         )
     }
 }
 
-/** Expenses grouped by day: a date divider, then one card per expense. */
+/** Expenses grouped by day: a date divider, then one card per expense. Tapping a card opens its details. */
 @Composable
 fun ExpensesList(
     expenses: List<Expense>,
-    onDelete: (Expense) -> Unit,
-    modifier: Modifier = Modifier
+    onClick: (Expense) -> Unit,
+    modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState()
 ) {
     val groups = remember(expenses) { expenses.groupBy { it.date }.toList() }
-    LazyColumn(modifier = modifier, contentPadding = PaddingValues(bottom = 16.dp)) {
+    LazyColumn(state = listState, modifier = modifier, contentPadding = PaddingValues(bottom = 16.dp)) {
         items(groups, key = { it.first }) { (date, dayExpenses) ->
             DateDivider(date)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 dayExpenses.forEach { expense ->
-                    ExpenseItem(expense = expense, onDelete = onDelete)
+                    ExpenseItem(expense = expense, onClick = { onClick(expense) })
                 }
             }
         }
@@ -146,7 +169,7 @@ private fun formatDateLabel(date: String): String {
     }
 }
 
-private fun formatAmount(amount: Float): String =
+internal fun formatAmount(amount: Float): String =
     if (amount % 1f == 0f) "₹${amount.toLong()}" else "₹${"%.2f".format(amount)}"
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -194,81 +217,32 @@ private fun SearchBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
+/**
+ * Card colour: white in light mode (with a soft shadow, see [cardElevation]) so cards stand out from
+ * the grey page; dark mode already has enough contrast with surfaceContainerLow.
+ */
 @Composable
-fun ExpenseItem(expense: Expense,
-                onDelete: (Expense) -> Unit) {
+internal fun cardContainerColor(): Color =
+    if (isLightTheme()) MaterialTheme.colorScheme.surface
+    else MaterialTheme.colorScheme.surfaceContainerLow
 
-    var showDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+@Composable
+internal fun isLightTheme(): Boolean = MaterialTheme.colorScheme.background.luminance() > 0.5f
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Delete Expense") },
-            text = { Text("Are you sure you want to delete this expense?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDialog = false
-                        deleteExpense(context, expense.dateAdded)   // dummy function call
-                        onDelete(expense)        // update UI list
-                    }
-                ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-    val swipeState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { target ->
-            if (target == SwipeToDismissBoxValue.EndToStart) showDialog = true
-            false // always snap back; the row is removed only after the dialog is confirmed
-        }
-    )
-    // Light mode: white cards (surface) with a soft shadow, so they stand out from the grey page.
-    // Dark mode already has enough contrast with surfaceContainerLow.
-    val isLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
-    val rowColor = if (isLight) MaterialTheme.colorScheme.surface
-                   else MaterialTheme.colorScheme.surfaceContainerLow
-
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ExpenseItem(expense: Expense, onClick: () -> Unit) {
     Card(
+        onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = rowColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isLight) 1.dp else 0.dp),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isLightTheme()) 1.dp else 0.dp),
         modifier = Modifier.fillMaxWidth()
-    ) {
-    SwipeToDismissBox(
-        state = swipeState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            Box(
-                contentAlignment = Alignment.CenterEnd,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(end = 20.dp)
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-        }
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .background(rowColor)
-                .combinedClickable(onClick = {}, onLongClick = { showDialog = true })
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(
@@ -314,11 +288,10 @@ fun ExpenseItem(expense: Expense,
             }
         }
     }
-    }
 }
 
 @Composable
-private fun Tag(text: String, container: Color, content: Color) {
+internal fun Tag(text: String, container: Color, content: Color) {
     Surface(color = container, contentColor = content, shape = RoundedCornerShape(6.dp)) {
         Text(
             text,
